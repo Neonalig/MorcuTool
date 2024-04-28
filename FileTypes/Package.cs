@@ -1,4 +1,5 @@
-﻿using MorcuTool.ViewModels.Pages;
+﻿using MorcuTool.Models;
+using MorcuTool.ViewModels.Pages;
 
 namespace MorcuTool;
 
@@ -66,10 +67,6 @@ public class Package
 
     public void LoadPackage()
     {
-
-        int currenttypeindexbeingprocessed;
-        int instancesprocessedofcurrenttype;
-
         using var reader = new BinaryReader(File.Open(filename, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite));
         uint magic;
 
@@ -171,8 +168,8 @@ public class Package
                 IndexEntries.Add(newEntry);
             }
 
-            currenttypeindexbeingprocessed = 0;
-            instancesprocessedofcurrenttype = 0;
+            var typeIndex = 0;
+            var instancesOfType = 0;
 
             for (uint i = 0; i < filecount; i++) //go through the files, they are organised by type, one type after the other. (So X number of type A, as described above, then Y number of type B...)
             {
@@ -181,24 +178,24 @@ public class Package
                     hash = Utility.ReverseEndianULong(reader.ReadUInt64()),
                     fileoffset = Utility.ReverseEndian(reader.ReadUInt32()),
                     filesize = Utility.ReverseEndian(reader.ReadUInt32()),
-                    typeID = IndexEntries[currenttypeindexbeingprocessed].typeID,
-                    groupID = IndexEntries[currenttypeindexbeingprocessed].groupID,
+                    fileType = FileType.FromValue(IndexEntries[typeIndex].typeID),
+                    groupID = IndexEntries[typeIndex].groupID,
                 };
 
-                if (IndexEntries[currenttypeindexbeingprocessed].groupID != 0) //it's compressed
+                if (IndexEntries[typeIndex].groupID != 0) //it's compressed
                 {
                     newSubfile.should_be_compressed_when_in_package = true;
                     newSubfile.uncompressedsize = Utility.ReverseEndian(reader.ReadUInt32());
                     Console.WriteLine("Found a compressed file");
                 }
 
-                instancesprocessedofcurrenttype++;
+                instancesOfType++;
 
-                if (instancesprocessedofcurrenttype == IndexEntries[currenttypeindexbeingprocessed].typeNumberOfInstances)
+                if (instancesOfType == IndexEntries[typeIndex].typeNumberOfInstances)
                 {
-                    Console.WriteLine($"Processed {instancesprocessedofcurrenttype} instances of {currenttypeindexbeingprocessed}");
-                    currenttypeindexbeingprocessed++;
-                    instancesprocessedofcurrenttype = 0;
+                    Console.WriteLine($"Processed {instancesOfType} instances of {typeIndex}");
+                    typeIndex++;
+                    instancesOfType = 0;
                 }
 
                 subfiles.Add(newSubfile);
@@ -217,7 +214,7 @@ public class Package
                     {
                         var newSubfile = new Subfile
                         {
-                            typeID = reader.ReadUInt32(),
+                            fileType = FileType.FromValue(reader.ReadUInt32()),
                             groupID = reader.ReadUInt32(),
                         };
 
@@ -245,19 +242,16 @@ public class Package
                     break;
                 }
                 case 1:
-                    MessageBox.Show("Index version 1 not implemented!");
-                    break;
+                    throw new NotImplementedException("Index version 1 not implemented!");
                 case 2:
                 {
-                    Console.WriteLine("index version 2");
-
                     reader.BaseStream.Position += 4;
 
                     for (uint i = 0; i < filecount; i++)
                     {
                         var newSubfile = new Subfile
                         {
-                            typeID = reader.ReadUInt32(),
+                            fileType = FileType.FromValue(reader.ReadUInt32()),
                             hash = (ulong)(reader.ReadUInt32()) << 32,
                         };
 
@@ -284,15 +278,14 @@ public class Package
                 }
                 case 3:
                 {
-                    Console.WriteLine("index version 3");
-                    uint allFilesTypeID = reader.ReadUInt32();
+                    FileType allFilesType = FileType.FromValue(reader.ReadUInt32());
                     reader.BaseStream.Position += 4;
 
                     for (uint i = 0; i < filecount; i++)
                     {
                         var newSubfile = new Subfile
                         {
-                            typeID = allFilesTypeID,
+                            fileType = allFilesType,
                             hash = (ulong)(reader.ReadUInt32()) << 32,
                         };
 
@@ -304,13 +297,9 @@ public class Package
                         reader.BaseStream.Position += 0x04; //flags
 
                         if (newSubfile.filesize == newSubfile.uncompressedsize)
-                        {
                             newSubfile.uncompressedsize = 0;
-                        }
                         else
-                        {
                             newSubfile.should_be_compressed_when_in_package = true;
-                        }
 
                         subfiles.Add(newSubfile);
                     }
@@ -319,15 +308,15 @@ public class Package
                 }
                 case 4:
                 {
-                    Console.WriteLine("index version 4");
-                    Console.WriteLine("AS SEEN IN SPORE? I certainly hope it doesn't appear in MSK, because if it does, the extra 4 bytes I'm reading after every entry may not apply!");
+                    // AS SEEN IN SPORE? I certainly hope it doesn't appear in MSK, because if it does, the extra 4 bytes I'm reading after every entry may not apply!
+                    // This also appears to occur during certain MySims PC packages, so it's not just a Spore thing.
                     reader.BaseStream.Position += 4;
 
                     for (uint i = 0; i < filecount; i++)
                     {
                         var newSubfile = new Subfile
                         {
-                            typeID = reader.ReadUInt32(),
+                            fileType = FileType.FromValue(reader.ReadUInt32()),
                             hash = (ulong)(reader.ReadUInt32()) << 32,
                         };
 
@@ -346,7 +335,7 @@ public class Package
                             newSubfile.should_be_compressed_when_in_package = true;
                         }
 
-                        reader.ReadUInt32(); //unknown flags?
+                        reader.ReadUInt32(); // TODO: Determine what this is (unknown flags?)
 
                         subfiles.Add(newSubfile);
                     }
@@ -355,12 +344,11 @@ public class Package
                 }
                 case 7:
                 {
-                    Console.WriteLine("index version 7");
                     for (uint i = 0; i < filecount; i++)
                     {
                         var newSubfile = new Subfile
                         {
-                            typeID = reader.ReadUInt32(),
+                            fileType = FileType.FromValue(reader.ReadUInt32()),
                             groupID = reader.ReadUInt32(),
                             hash = (ulong)(reader.ReadUInt32()) << 32,
                         };
@@ -373,13 +361,9 @@ public class Package
                         reader.BaseStream.Position += 0x04; //flags
 
                         if (newSubfile.filesize == newSubfile.uncompressedsize)
-                        {
                             newSubfile.uncompressedsize = 0;
-                        }
                         else
-                        {
                             newSubfile.should_be_compressed_when_in_package = true;
-                        }
 
                         subfiles.Add(newSubfile);
                     }
@@ -387,8 +371,7 @@ public class Package
                     break;
                 }
                 default:
-                    MessageBox.Show($"Unknown index version: {MSKindexversion}");
-                    return;
+                    throw new NotImplementedException($"Unknown index version: {MSKindexversion}");
             }
         }
 
@@ -402,309 +385,40 @@ public class Package
 
         var luaFilenamesForDict = new List<string>();
 
-        bool containslua = false;
+        bool containsLua = false;
 
         for (int i = 0; i < filecount; i++)
         {
-
-            if (subfiles[i].should_be_compressed_when_in_package)
+            Subfile subfile = subfiles[i];
+            if (subfile.should_be_compressed_when_in_package)
             {
-                subfiles[i].has_been_decompressed = false; //set default state of a compressed file to compressed
+                subfile.has_been_decompressed = false; //set default state of a compressed file to compressed
             }
 
             {
-                string fileextension = null;
+                Vault.luaString typeIDRealString = AppState.activeVault.GetLuaStringWithHash(subfile.fileType);
 
-                switch ((AppState.TypeID)subfiles[i].typeID)
+                // if (typeIDRealString != null)
+                //     fileExtension = $".{typeIDRealString.name}";
+
+                byte[] newfilenameasbytes = BitConverter.GetBytes(Utility.ReverseEndianULong(subfile.hash));
+
+                subfile.filename = "0x";
+
+                ulong newfilenameasulong = Utility.ReverseEndianULong(subfile.hash);
+
+                subfile.hashString = $"0x{BitConverter.ToString(newfilenameasbytes).Replace("-", "")}";
+
+                if (AppState.activeVault.VaultHashesAndFileNames.Keys.Contains(subfile.hash))
                 {
-                    case AppState.TypeID.RMDL_MSA: //RMDL MSA          fileextension = ".rmdl";        //TYPE ID 29 54 E7 34
-                        break;
-
-                    case AppState.TypeID.RMDL_MSK: //RMDL MSK          fileextension = ".rmdl";        //          "ModelData"
-                        break;
-
-                    case AppState.TypeID.WMDL_MSPC: //WMDL MySims PC
-                        fileextension = ".wmdl";
-                        break;
-
-                    case AppState.TypeID.MATD_MSA: //MATD MSA         fileextension = ".matd";        //TYPE ID E6 64 05 42
-                        break;
-
-                    case AppState.TypeID.MATD_MSK: //MATD MSK            "MaterialData"
-                        fileextension = ".matd";
-                        break;
-
-                    case AppState.TypeID.TPL_MSA: //altered TPL MSA
-                        fileextension = ".tpl"; //TYPE ID 92 AA 4D 6A
-                        break;
-
-                    case AppState.TypeID.TPL_MSK: //altered TPL MSK      "TextureData"
-                        fileextension = ".tpl";
-                        break;
-
-                    case AppState.TypeID.MTST_MSK: //MTST Material Set MSK       "MaterialSetData"
-                        fileextension = ".mtst";
-                        break;
-
-                    case AppState.TypeID.MTST_MSA: //MTST Material Set MSA
-                        fileextension = ".mtst"; //TYPE ID 78 7E 84 2A
-                        break;
-
-                    case AppState.TypeID.FPST_MSK: //FPST   MySims Kingdom footprint set.    "FootprintData"    contains a model footprint (ftpt) which is possibly documented at http://simswiki.info/wiki.php?title=Sims_3:PackedFileTypes
-                    case AppState.TypeID.FPST_MSA: //FPST   MySims Agents footprint set.                        contains a model footprint (ftpt) which is possibly documented at http://simswiki.info/wiki.php?title=Sims_3:PackedFileTypes
-                        fileextension = ".fpst"; //It's like a heatmap of where sims can walk? Or perhaps which surfaces should generate which kind of footprint (but wouldn't that mean that overhangs wouldn't work?)
-                        break;
-
-                    case AppState.TypeID.BNK_MSA: //BNKb    big endian BNK    MSA                             vgmstream can decode these.           https://github.com/losnoco/vgmstream/blob/master/src/meta/ea_schl.c       fileextension = ".bnk";        //TYPE ID 21 99 BB 60
-                        break;
-
-                    case AppState.TypeID.BNK_MSK: //BNKb    BNK    MSK (idk which endian, not tested)       "AudioData"             vgmstream can decode these.           https://github.com/losnoco/vgmstream/blob/master/src/meta/ea_schl.c       fileextension = ".bnk";
-                        break;
-
-                    case AppState.TypeID.BIG_MSK: //big        fileextension = ".big";         //"AptData" (but it is, of course, a familiar EA .BIG archive)
-                        break;
-
-                    case AppState.TypeID.BIG_MSA: //BIGF
-                        fileextension = ".big";
-                        break;
-
-                    case AppState.TypeID.COLLISION_MSA: //00 00 00 02             There's another, separate filetype that also begins with the 2 magic, but that one doesn't appear as frequently, so this one here is probably the collision type ID
-                        //TYPE ID 1A 8F EB 14.       fileextension = ".collision";               //mesh collision
-                        break; //there are mentions of 'rwphysics' in MSA's main.dol; could this mean Renderware Physics, which was indeed a product available at the time?
-
-                    case AppState.TypeID.FX: //FX
-                        fileextension = ".fx";
-                        break;
-
-                    case AppState.TypeID.LUAC_MSA: //LUAC MSA
-                        fileextension = ".luac";
-                        containslua = true;
-                        break;
-
-                    case AppState.TypeID.LUAC_MSK: //LUAC MSK  "LuaObjectData"
-                        fileextension = ".luac";
-                        containslua = true;
-                        break;
-
-                    case AppState.TypeID.SLOT_MSA: //SLOT MSA
-                        fileextension = ".slot";
-                        break;
-
-                    case AppState.TypeID.SLOT_MSK: //SLOT MSK
-                        fileextension = ".slot"; //"SlotData"
-                        break;
-
-                    case AppState.TypeID.PARTICLES_MSA: //particles file
-                        fileextension = ".particles"; //TYPE ID 28 70 78 64
-                        break;
-
-                    case AppState.TypeID.BUILDABLEREGION_MSA: //00 00 00 03        buildable region MSA
-                        fileextension = ".buildableregion";
-                        break;
-
-                    case AppState.TypeID.BUILDABLEREGION_MSK: //buildable region MSK        "BuildableRegionData"
-                        fileextension = ".buildableregion";
-                        break;
-
-                    case AppState.TypeID.LLMF_MSA: //LLMF level bin MSA
-                        fileextension = ".llmf";
-                        break;
-
-                    case AppState.TypeID.LLMF_MSK: //LLMF level bin MSK   "LevelData"
-                        fileextension = ".llmf";
-                        break;
-
-                    case AppState.TypeID.RIG_MSA: //RIG MSA                   //Interesting granny struct info at 0x49CFDD in MSA's main.dol
-                        fileextension = ".grannyrig"; //TYPE ID 46 72 E5 BD
-                        break;
-
-                    case AppState.TypeID.RIG_MSK: //RIG MSK
-                        fileextension = ".grannyrig"; // "RigData"
-                        break;
-
-                    case AppState.TypeID.ANIMCLIP_MSA: //ANIMATION MSA
-                        fileextension = ".clip"; //TYPE ID D6 BE DA 43
-                        break;
-
-                    case AppState.TypeID.ANIMCLIP_MSK: //ANIMATION MSK         "ClipData"
-                        fileextension = ".clip";
-                        break;
-
-                    case AppState.TypeID.LTST_MSA:
-                        fileextension = ".ltst"; //possibly lighting set?
-                        break;
-
-                    case AppState.TypeID.TTF_MSK: //TrueType font MySims Kingdom
-                    case AppState.TypeID.TTF_MSA: //TrueType font MySims Agents
-                        fileextension = ".ttf"; //TYPE ID 27 6C A4 B9
-                        break;
-
-                    case AppState.TypeID.HKX_MSK: //MSK HKX havok collision file
-                        fileextension = ".hkx"; // "PhysicsData"
-                        break;
-
-                    case AppState.TypeID.OGVD_MSK:
-                        fileextension = ".objectGridVolumeData"; //MSK "ObjectGridVolumeData"
-                        break;
-
-                    case AppState.TypeID.OGVD_MSA: //00 00 00 02           MSA ObjectGridVolumeData bounding box collision (for very simple objects)
-                        fileextension = ".objectGridVolumeData";
-                        break;
-
-                    case AppState.TypeID.SPD_MSK:
-                        fileextension = ".snapPointData"; //MSK "SnapPointData"
-                        break;
-
-                    case AppState.TypeID.SPD_MSA: //00 00 00 03          MSA SnapPointData, most likely
-                        fileextension = ".snapPointData";
-                        break;
-
-                    case AppState.TypeID.VGD_MSK:
-                        fileextension = ".voxelGridData"; //MSK "VoxelGridData"
-                        break;
-
-                    case AppState.TypeID.VGD_MSA: //00 00 00 01      MSA VoxelGridData, most likely, most likely
-                        fileextension = ".voxelGridData";
-                        break;
-
-                    case AppState.TypeID.MODEL_MS: //model          used by MySims, not the same as rmdl
-                        fileextension = ".model";
-                        break;
-
-                    case AppState.TypeID.KEYNAMEMAP_MS:
-                        fileextension = ".KeyNameMap";
-                        break;
-
-                    case AppState.TypeID.GEOMETRY_MS:
-                        fileextension = ".geometry";
-                        break;
-
-                    case AppState.TypeID.OLDSPEEDTREE_MS:
-                        fileextension = ".oldSpeedTree";
-                        break;
-
-                    case AppState.TypeID.SPEEDTREE_MS:
-                        fileextension = ".speedTree";
-                        break;
-
-                    case AppState.TypeID.COMPOSITETEXTURE_MS:
-                        fileextension = ".compositeTexture";
-                        break;
-
-                    case AppState.TypeID.SIMOUTFIT_MS:
-                        fileextension = ".simOutfit";
-                        break;
-
-                    case AppState.TypeID.LEVELXML_MS:
-                        fileextension = ".levelXml";
-                        break;
-
-                    case AppState.TypeID.LUA_MSK: //uncompiled lua script "LuaTextData"
-                        fileextension = ".lua";
-                        break;
-
-                    case AppState.TypeID.LIGHTSETXML_MS: //Light set XML MySims
-                        fileextension = ".lightSetXml";
-                        break;
-
-                    case AppState.TypeID.LIGHTSETBIN_MSK: //Light set bin MySims
-                        fileextension = ".lightSetBin"; //Named "LightSetData" in MSK's executable
-                        break;
-
-                    case AppState.TypeID.XML_MS: //xml
-                        fileextension = ".xml";
-                        break;
-
-                    case AppState.TypeID.XML2_MS: //another xml
-                        fileextension = ".xml2";
-                        break;
-
-                    case AppState.TypeID.FPST_MS: //footprint set MySims
-                        fileextension = ".footprintSet";
-                        break;
-
-                    case AppState.TypeID.OBJECTCONSTRUCTIONXML_MS: //object construction xml
-                        fileextension = ".objectConstructionXml";
-                        break;
-
-                    case AppState.TypeID.OBJECTCONSTRUCTIONBIN_MS: //object construction bin
-                        fileextension = ".objectConstructionBin";
-                        break;
-
-                    case AppState.TypeID.SLOTXML_MS: //slot xml
-                        fileextension = ".slotXml";
-                        break;
-
-                    case AppState.TypeID.SWARM_MSK: //swm
-                        fileextension = ".swm"; //MSK           "SwarmData"
-                        break;
-
-                    case AppState.TypeID.SWARM_MS: //SwarmBin
-                        fileextension = ".SwarmBin";
-                        break;
-
-                    case AppState.TypeID.XMLBIN_MS: //XmlBin
-                        fileextension = ".XmlBin";
-                        break;
-
-                    case AppState.TypeID.CABXML_MS: //CABXml
-                        fileextension = ".CABXml";
-                        break;
-
-                    case AppState.TypeID.CABBIN_MS: //CABBin
-                        fileextension = ".CABBin";
-                        break;
-
-                    case AppState.TypeID.LIGHTBOXXML_MS: //LightBoxXml
-                        fileextension = ".lightBoxXml";
-                        break;
-
-                    case AppState.TypeID.LIGHTBOXBIN_MS: //LightBoxBin
-                        fileextension = ".lightBoxBin"; //MSK LightBoxData (Named in MSK's executable, though I think I found it in MySims?)
-                        break;
-
-                    case AppState.TypeID.XMB_MS: //xmb
-                        fileextension = ".xmb";
-                        break;
-
-                    default:
-                        Console.WriteLine($"Unknown type ID {subfiles[i].typeID}");
-                        Console.WriteLine($"index of file was {filesprocessed}");
-                        fileextension = $".{subfiles[i].typeID}";
-                        break;
-                }
-
-                subfiles[i].fileextension = fileextension;
-
-
-
-                Vault.luaString typeIDRealString = AppState.activeVault.GetLuaStringWithHash(subfiles[i].typeID);
-
-                //if (typeIDRealString != null)
-                //   {
-                //   fileextension = "." + typeIDRealString.name;
-                //   }
-
-
-
-                byte[] newfilenameasbytes = BitConverter.GetBytes(Utility.ReverseEndianULong(subfiles[i].hash));
-
-                subfiles[i].filename = "0x";
-
-                ulong newfilenameasulong = Utility.ReverseEndianULong(subfiles[i].hash);
-
-                subfiles[i].hashString = $"0x{BitConverter.ToString(newfilenameasbytes).Replace("-", "")}";
-
-                if (AppState.activeVault.VaultHashesAndFileNames.Keys.Contains(subfiles[i].hash))
-                {
-                    subfiles[i].filename = AppState.activeVault.VaultHashesAndFileNames[subfiles[i].hash];
+                    subfile.filename = AppState.activeVault.VaultHashesAndFileNames[subfile.hash];
                 }
                 else
                 {
-                    subfiles[i].filename = subfiles[i].hashString;
+                    subfile.filename = subfile.hashString;
                 }
 
-                subfiles[i].filename += fileextension;
+                subfile.filename += subfile.fileType.Extension;
 
                 /*
 
@@ -761,7 +475,7 @@ public class Package
         viewModel.MakeFileTree();
 
 
-        if (containslua && AppState.activeVault.luaStrings.Count > 0)
+        if (containsLua && AppState.activeVault.luaStrings.Count > 0)
         {
             string[] luaStringsForExport = new string[AppState.activeVault.luaStrings.Count];
 
@@ -920,7 +634,7 @@ public class Package
 
         foreach (Subfile s in AppState.activePackage.subfiles)
         {
-            if (s.hash == hash && s.typeID == typeID)
+            if (s.hash == hash && s.fileType == typeID)
             {
                 return s;
             }
@@ -1041,7 +755,7 @@ public class Package
         }
 
         //sort by type ID, and within a type ID, by hash
-        subfiles = subfiles.OrderBy(s => s.typeID).ThenBy(s => s.hash).ToList();
+        subfiles = subfiles.OrderBy(s => s.fileType).ThenBy(s => s.hash).ToList();
 
         var indexEntriesForWriting = new List<IndexEntry>();
         var TypeIDsThatRequireCompression = new List<uint>();
@@ -1056,7 +770,7 @@ public class Package
 
             foreach (IndexEntry entry in indexEntriesForWriting)
             {
-                if (entry.typeID == subfiles[f].typeID)
+                if (entry.typeID == subfiles[f].fileType)
                 {
                     entry.typeNumberOfInstances++;
                     typeIDhasIndexEntry = true;
@@ -1068,7 +782,7 @@ public class Package
             {
                 var newIndexEntry = new IndexEntry
                 {
-                    typeID = subfiles[f].typeID,
+                    typeID = subfiles[f].fileType,
                 };
 
                 if (subfiles[f].should_be_compressed_when_in_package)
@@ -1148,7 +862,7 @@ public class Package
 
                 // this line is probably only required in MSK     utility.AddUIntToList(output, utility.ReverseEndian(subfiles[i].groupID));
 
-                if (TypeIDsThatRequireCompression.Contains(subfiles[i].typeID))
+                if (TypeIDsThatRequireCompression.Contains(subfiles[i].fileType))
                 {
                     Utility.AddUIntToList(output, Utility.ReverseEndian(subfiles[i].uncompressedsize));
                 }

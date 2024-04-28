@@ -4,6 +4,7 @@ global using System.Collections;
 global using System.Collections.Generic;
 global using System.Collections.ObjectModel;
 global using System.Collections.Specialized;
+global using System.ComponentModel;
 global using System.Configuration;
 global using System.Data;
 global using System.Drawing;
@@ -19,10 +20,11 @@ global using System.Windows.Input;
 global using System.Windows.Navigation;
 global using System.Windows.Threading;
 
+global using Ardalis.SmartEnum;
 global using JetBrains.Annotations;
-global using Wpf.Ui.Controls;
 global using UnluacNET;
 global using Wpf.Ui;
+global using Wpf.Ui.Controls;
 
 global using Microsoft.Extensions.Configuration;
 global using Microsoft.Extensions.DependencyInjection;

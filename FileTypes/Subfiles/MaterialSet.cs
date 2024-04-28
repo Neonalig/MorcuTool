@@ -1,4 +1,6 @@
-﻿namespace MorcuTool;
+﻿using MorcuTool.Models;
+
+namespace MorcuTool;
 
 public class MaterialSet
 {
@@ -23,7 +25,7 @@ public class MaterialSet
         }
 
         foreach (Subfile s in AppState.activePackage.subfiles) {
-            if (!(s.typeID is (uint)AppState.TypeID.MATD_MSK or (uint)AppState.TypeID.MATD_MSA)){
+            if (s.fileType != FileType.MATD_MSK && s.fileType != FileType.MATD_MSA) {
                 continue;
             }
             if (hashes.Contains(s.hash)) {

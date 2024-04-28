@@ -1,4 +1,5 @@
-﻿using MorcuTool.MorcuMath;
+﻿using MorcuTool.Models;
+using MorcuTool.MorcuMath;
 
 namespace MorcuTool;
 
@@ -581,19 +582,19 @@ public class RevoModel  //RMDL
 
                 foreach (Subfile s in AppState.activePackage.subfiles) {
 
-                    if (s.hash == newMesh.hash_of_material && s.typeID == typeID_of_material) {
-                        
-                        switch ((AppState.TypeID)s.typeID){
-                            case AppState.TypeID.MATD_MSK:
-                            case AppState.TypeID.MATD_MSA:
+                    if (s.hash == newMesh.hash_of_material && s.fileType == typeID_of_material) {
+
+                        switch (s.fileType.Name) {
+                            case nameof(FileType.MATD_MSK):
+                            case nameof(FileType.MATD_MSA):
                                 
                                 if (s.filebytes == null || s.filebytes.Length == 0) {
                                     s.Load();
                                 }
                                 newMesh.materials.Add(s.matd);
                                 break;
-                            case AppState.TypeID.MTST_MSK:
-                            case AppState.TypeID.MTST_MSA:
+                            case nameof(FileType.MTST_MSK):
+                            case nameof(FileType.MTST_MSA):
                                 if (s.filebytes == null || s.filebytes.Length == 0){
                                     s.Load();
                                 }
@@ -604,7 +605,7 @@ public class RevoModel  //RMDL
 
                                 break;
                             default:
-                                MessageBox.Show($"RMDL tried to use a material of unexpected type ID: {(AppState.TypeID)s.typeID}");
+                                MessageBox.Show($"RMDL tried to use a material of unexpected type ID: {s.fileType}");
                                 break;
                         }
                         break;

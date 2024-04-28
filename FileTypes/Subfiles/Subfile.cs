@@ -1,4 +1,6 @@
-﻿namespace MorcuTool;
+﻿using MorcuTool.Models;
+
+namespace MorcuTool;
 
 public class Subfile
 {
@@ -16,10 +18,8 @@ public class Subfile
 
     public uint uncompressedsize; //only used by compressed files
 
-    public uint typeID;
+    public FileType fileType;
     public uint groupID;
-
-    public string fileextension = "";
 
     public hkxFile hkx; //if needed
     public MsaCollision msaCol; //if needed
@@ -47,9 +47,9 @@ public class Subfile
         }
 
 
-        switch ((AppState.TypeID)typeID)
+        switch (fileType.Name)
         {
-            case AppState.TypeID.HKX_MSK: //MySims Kingdom HKX
+            case nameof(FileType.HKX_MSK): //MySims Kingdom HKX
                 try
                 {
                     hkx = new hkxFile(this);
@@ -60,32 +60,32 @@ public class Subfile
                 }
 
                 break;
-            case AppState.TypeID.COLLISION_MSA: //MySims Agents mesh collision
+            case nameof(FileType.COLLISION_MSA): //MySims Agents mesh collision
                 msaCol = new MsaCollision(this);
                 File.WriteAllLines($"{filename}.obj", msaCol.obj);
                 break;
-            case AppState.TypeID.LLMF_MSK: //LLMF level bin MSK   "LevelData"
-            case AppState.TypeID.LLMF_MSA: //LLMF level bin MSA
+            case nameof(FileType.LLMF_MSK): //LLMF level bin MSK   "LevelData"
+            case nameof(FileType.LLMF_MSA): //LLMF level bin MSA
                 llmf = new LLMF(this);
                 llmf.GenerateReport();
                 break;
-            case AppState.TypeID.RMDL_MSK: //RMDL MSK        case global.TypeID.RMDL_MSA:          //RMDL MSA          rmdl = new RevoModel(this);
+            case nameof(FileType.RMDL_MSK): //RMDL MSK        case global.TypeID.RMDL_MSA:          //RMDL MSA          rmdl = new RevoModel(this);
                 break;
-            case AppState.TypeID.WMDL_MSPC: //WMDL MSPC
+            case nameof(FileType.WMDL_MSPC): //WMDL MSPC
                 wmdl = new WindowsModel(this);
                 break;
-            case AppState.TypeID.MTST_MSK:
-            case AppState.TypeID.MTST_MSA:
+            case nameof(FileType.MTST_MSK):
+            case nameof(FileType.MTST_MSA):
                 mtst = new MaterialSet(this);
                 break;
-            case AppState.TypeID.MATD_MSK: //MATD MSK            "MaterialData"
-            case AppState.TypeID.MATD_MSA: //MATD MSA         matd = new MaterialData(this);
+            case nameof(FileType.MATD_MSK): //MATD MSK            "MaterialData"
+            case nameof(FileType.MATD_MSA): //MATD MSA         matd = new MaterialData(this);
                 break;
-            case AppState.TypeID.TPL_MSK:
-            case AppState.TypeID.TPL_MSA:
+            case nameof(FileType.TPL_MSK):
+            case nameof(FileType.TPL_MSA):
                 tpl = new TPLtexture(this);
                 break;
-            case AppState.TypeID.ANIMCLIP_MSA:
+            case nameof(FileType.ANIMCLIP_MSA):
                 msaAnim = new MsaAnimation(this);
                 break;
         }
@@ -135,14 +135,14 @@ public class Subfile
                     saveFileDialog1.FileName = saveFileDialog1.FileName.Replace(".tpl", ".png");
                 }
             }
-            else if (typeID is (uint)AppState.TypeID.LUAC_MSK or (uint)AppState.TypeID.LUAC_MSA)
+            else if (fileType == FileType.LUAC_MSK || fileType == FileType.LUAC_MSA)
             {
                 saveFileDialog1.Filter = "Decompiled lua script (*.lua)|*.lua|Compiled lua script (*.luac)|*.luac";
                 saveFileDialog1.FileName = saveFileDialog1.FileName.Replace(".luac", ".lua");
             }
             else
             {
-                saveFileDialog1.Filter = $"{fileextension.ToUpper()} file (*{fileextension})|*{fileextension}|All files (*.*)|*.*";
+                saveFileDialog1.Filter = $"{fileType.Extension.ToUpper()} file (*{fileType.Extension.ToLower()})|*{fileType.Extension.ToLower()}|All files (*.*)|*.*";
             }
 
             if (saveFileDialog1.ShowDialog() == true)
@@ -156,7 +156,7 @@ public class Subfile
             {
                 silentPath = silentPath.Replace(".tpl", ".png");
             }
-            else if (typeID is (uint)AppState.TypeID.LUAC_MSK or (uint)AppState.TypeID.LUAC_MSA)
+            else if (fileType == FileType.LUAC_MSK || fileType == FileType.LUAC_MSA)
             {
                 //these MSK hashes are some of the ones that crash the decompiler
                 if (hash != 0x13A985F3E3E05FD1 && hash != 0x1DCDDD2C8D672B03 && hash != 0x225C6F76F6DFE215 || hash != 0x2B19149AE76336EA || hash != 0x13A985F3E3E05FD1)
@@ -211,7 +211,7 @@ public class Subfile
                     {
                         File.WriteAllBytes(silentPath, imageTools.ConvertToNintendoTPL(filename, filebytes).ToArray());
                     }
-                    else if (typeID is (uint)AppState.TypeID.LUAC_MSK or (uint)AppState.TypeID.LUAC_MSA && Path.GetExtension(silentPath) == ".lua")
+                    else if ((fileType == FileType.LUAC_MSK || fileType == FileType.LUAC_MSA) && Path.GetExtension(silentPath) == ".lua")
                     {
                         Console.WriteLine($"Trying to decompile {filename}");
                         DecompileLuc(filebytes, silentPath);
