@@ -26,6 +26,10 @@ namespace MorcuTool
         {
             InitializeComponent();
 
+            FileTree.AllowDrop = true;
+            FileTree.DragEnter += new DragEventHandler(FileTree_DragEnter);
+            FileTree.DragDrop += new DragEventHandler(FileTree_DragDrop);
+
             FileTree.NodeMouseClick += (sender, args) => FileTree.SelectedNode = args.Node;
             FileTree.NodeMouseClick += new System.Windows.Forms.TreeNodeMouseClickEventHandler(this.FileTree_NodeMouseClick);
         }
@@ -69,6 +73,37 @@ namespace MorcuTool
 
                    global.activePackage.LoadPackage();
                 }
+        }
+
+        private void FileTree_DragEnter(object sender, DragEventArgs e)
+        {
+            // If the data is a file or a collection of files, copy the data to the target control
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+                e.Effect = DragDropEffects.Copy;
+        }
+
+        private void FileTree_DragDrop(object sender, DragEventArgs e)
+        {
+            // Extract the data from the DataObject-Container into a string list
+            string[] fileList = (string[])e.Data.GetData(DataFormats.FileDrop, false);
+
+            // If the file is a package, load it; If it's a folder, load all packages in the folder; If it's a model, convert it
+            foreach (string file in fileList)
+            {
+                if (Path.GetExtension(file) == ".package" || Path.GetExtension(file) == ".wii")
+                {
+                    global.activePackage = new Package();
+                    global.activePackage.filebytes = File.ReadAllBytes(file);
+                    global.activePackage.filename = file;
+                    global.activePackage.form1 = this;
+
+                    global.activePackage.LoadPackage();
+                }
+                else if (Path.GetExtension(file) == ".mdl" || Path.GetExtension(file) == ".rmdl")
+                {
+                    ConvertSkyHeroesModel(file, File.ReadAllBytes(file));
+                }
+            }
         }
 
         public List<byte> ConvertSkyHeroesModel(string filename, byte[] file)
