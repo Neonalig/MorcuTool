@@ -49,6 +49,8 @@ public partial class App
                     // Views and ViewModels
                     _ = services.AddSingleton<HomePage>();
                     _ = services.AddSingleton<HomePageViewModel>();
+                    _ = services.AddSingleton<PackageViewPage>();
+                    _ = services.AddSingleton<PackageViewPageViewModel>();
                     _ = services.AddSingleton<SettingsPage>();
                     _ = services.AddSingleton<SettingsPageViewModel>();
 

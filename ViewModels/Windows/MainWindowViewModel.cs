@@ -11,6 +11,8 @@ public sealed class MainWindowViewModel : ViewModelBase
     public ObservableCollection<object> NavigationFooter { get; }
     public ObservableCollection<MenuItem> TrayMenuItems { get; }
 
+    NavigationViewItem packagesItem;
+
     public MainWindowViewModel()
     {
         NavigationItems =
@@ -21,6 +23,21 @@ public sealed class MainWindowViewModel : ViewModelBase
                 Icon = new SymbolIcon { Symbol = SymbolRegular.Home24 },
                 TargetPageType = typeof(HomePage),
             },
+            packagesItem = new NavigationViewItem
+            {
+                Content = "Packages",
+                Icon = new SymbolIcon { Symbol = SymbolRegular.Apps24 },
+                TargetPageType = typeof(PackageViewPage),
+                Visibility = Visibility.Collapsed,
+            },
+
+            // DEBUG:
+            new NavigationViewItem
+            {
+                Content = "Toggle Packages",
+                Icon = new SymbolIcon { Symbol = SymbolRegular.Bug24 },
+                Command = new RelayCommand(() => packagesItem.Visibility = packagesItem.Visibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible),
+            }
         ];
 
         NavigationFooter =
