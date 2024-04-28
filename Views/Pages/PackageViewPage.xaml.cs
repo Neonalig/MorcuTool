@@ -4,6 +4,7 @@ public partial class PackageViewPage : Page
 {
     public PackageViewPage()
     {
+        DataContext = AppState.activePackageViewPageViewModel;
         InitializeComponent();
     }
 }

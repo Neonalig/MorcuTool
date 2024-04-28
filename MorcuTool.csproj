@@ -31,4 +31,10 @@
       </Page>
     </ItemGroup>
 
+    <ItemGroup>
+      <Reference Include="UnluacNET">
+        <HintPath>lib\UnluacNET.dll</HintPath>
+      </Reference>
+    </ItemGroup>
+
 </Project>

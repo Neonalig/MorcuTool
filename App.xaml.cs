@@ -2,9 +2,6 @@
 using MorcuTool.Services;
 using MorcuTool.ViewModels.Pages;
 using MorcuTool.Views.Pages;
-using Wpf.Ui;
-using MessageBox = System.Windows.MessageBox;
-using MessageBoxButton = System.Windows.MessageBoxButton;
 
 namespace MorcuTool;
 
