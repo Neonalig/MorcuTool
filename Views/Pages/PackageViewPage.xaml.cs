@@ -1,6 +1,6 @@
 ﻿namespace MorcuTool.Views.Pages;
 
-public partial class PackageViewPage : Page
+public partial class PackageViewPage
 {
     public PackageViewPage()
     {

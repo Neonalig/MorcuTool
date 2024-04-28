@@ -1,6 +1,4 @@
-﻿using TreeViewItem = Wpf.Ui.Controls.TreeViewItem;
-
-namespace MorcuTool;
+﻿namespace MorcuTool;
 
 public class Subfile
 {

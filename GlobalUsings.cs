@@ -34,3 +34,4 @@ global using MessageBoxResult = System.Windows.MessageBoxResult;
 global using MessageBoxButton = System.Windows.MessageBoxButton;
 global using MessageBoxImage = System.Windows.MessageBoxImage;
 global using Image = System.Drawing.Image;
+global using TreeViewItem = Wpf.Ui.Controls.TreeViewItem;

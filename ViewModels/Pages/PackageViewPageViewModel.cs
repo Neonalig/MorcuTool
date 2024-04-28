@@ -1,17 +1,8 @@
-﻿using TreeViewItem = Wpf.Ui.Controls.TreeViewItem;
-
-namespace MorcuTool.ViewModels.Pages;
+﻿namespace MorcuTool.ViewModels.Pages;
 
 public class PackageViewPageViewModel : ViewModelBase
 {
     public ObservableCollection<TreeViewItem> TreeItems { get; } = new();
-
-    TreeViewItem? _selectedItem;
-    public TreeViewItem? SelectedItem
-    {
-        get => _selectedItem;
-        set => SetField(ref _selectedItem, value);
-    }
 
     public PackageViewPageViewModel()
     {
@@ -44,8 +35,8 @@ public class PackageViewPageViewModel : ViewModelBase
 
                 tempFilePath += file.filename;
 
-                // if (tempFilePath[^1] == '/')
-                //     tempFilePath.Remove(tempFilePath.Length - 1);
+                if (tempFilePath[^1] == '/')
+                    tempFilePath = tempFilePath.Remove(tempFilePath.Length - 1);
 
                 if (tempFilePath[0] == '/')
                     tempFilePath = tempFilePath.Substring(1, tempFilePath.Length - 1);
@@ -58,8 +49,8 @@ public class PackageViewPageViewModel : ViewModelBase
                     dirs.Add(dirName);
                     tempFilePath = dirName;
 
-                    // if (tempFilePath[^1] == '/')
-                    //     tempFilePath.Remove(tempFilePath.Length - 1);
+                    if (tempFilePath[^1] == '/')
+                        tempFilePath = tempFilePath.Remove(tempFilePath.Length - 1);
                 }
 
                 bool isRoot = true;

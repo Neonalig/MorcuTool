@@ -5,7 +5,6 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:vm="clr-namespace:MorcuTool.ViewModels.Pages"
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-      xmlns:extensions="clr-namespace:MorcuTool.Extensions"
       mc:Ignorable="d"
       d:DataContext="{d:DesignInstance vm:PackageViewPageViewModel, IsDesignTimeCreatable=True}"
       d:DesignHeight="450"
@@ -23,15 +22,13 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <Border Grid.Row="0" Grid.Column="0" Background="#33000000" CornerRadius="20" Margin="20">
+        <Border DockPanel.Dock="Top" Background="#33000000" CornerRadius="20" Margin="20">
             <TreeView Margin="10"
+                      MaxHeight="300"
                       ItemsSource="{Binding TreeItems}"
-                      extensions:BindableTreeViewSelector.SelectedItem="{Binding SelectedItem, Mode=TwoWay}"
-                      ScrollViewer.CanContentScroll="True"
                       VirtualizingStackPanel.IsVirtualizing="True"
-                      VirtualizingStackPanel.VirtualizationMode="Recycling"
-                      HorizontalAlignment="Stretch"
-                      VerticalAlignment="Stretch"/>
+                      VirtualizingStackPanel.VirtualizationMode="Recycling">
+            </TreeView>
         </Border>
 
         <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="#33000000" CornerRadius="20,0,0,20" Padding="20">
