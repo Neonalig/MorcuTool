@@ -1,14 +1,15 @@
-﻿using Wpf.Ui;
-
-namespace MorcuTool;
+﻿namespace MorcuTool;
 
 /// <summary>
 /// Interaction logic for MainWindow.xaml
 /// </summary>
 public partial class MainWindow : INavigationWindow
 {
-    public MainWindow(IPageService pageService, INavigationService navigationService)
+    public MainWindowViewModel ViewModel { get; }
+
+    public MainWindow(MainWindowViewModel viewModel, IPageService pageService, INavigationService navigationService)
     {
+        DataContext = ViewModel = viewModel;
         InitializeComponent();
 
         SetPageService(pageService);

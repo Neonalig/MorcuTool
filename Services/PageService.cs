@@ -1,6 +1,4 @@
-﻿using Wpf.Ui;
-
-namespace MorcuTool.Services;
+﻿namespace MorcuTool.Services;
 
 public sealed class PageService : IPageService
 {

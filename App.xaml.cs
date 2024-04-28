@@ -52,7 +52,15 @@ public partial class App
                     _ = services.AddSingleton<SettingsPageViewModel>();
 
                     // Configuration
-                    _ = services.Configure<AppConfig>(context.Configuration.GetSection(nameof(AppConfig)));
+                    services.AddSingleton<AppConfig>(serviceProvider =>
+                    {
+                        var config = new AppConfig();
+                        SettingsContext context = new();
+                        SettingsPropertyCollection properties = new();
+                        SettingsProviderCollection providers = new();
+                        config.Initialize(context, properties, providers);
+                        return config;
+                    });
                 }
             )
             .Build();

@@ -289,4 +289,15 @@ public static class Utility
             default: Console.WriteLine($"Couldn't translate MSADS char: {b}");  return (char)b;
         }
     }
+
+    public static void OpenInBrowser(string url)
+    {
+        var psi = new ProcessStartInfo
+        {
+            FileName = url,
+            UseShellExecute = true,
+            Verb = "open"
+        };
+        Process.Start(psi);
+    }
 }

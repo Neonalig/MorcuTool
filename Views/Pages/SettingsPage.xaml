@@ -5,17 +5,120 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:vm="clr-namespace:MorcuTool.ViewModels.Pages"
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+      xmlns:conv="clr-namespace:MorcuTool.Converters"
+      xmlns:sys="clr-namespace:System;assembly=System.Runtime"
       mc:Ignorable="d"
       d:DataContext="{d:DesignInstance vm:SettingsPageViewModel, IsDesignTimeCreatable=True}"
       d:DesignHeight="450"
       d:DesignWidth="800"
       ui:Design.Background="{DynamicResource ApplicationBackgroundBrush}"
       ui:Design.Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+      Unloaded="SettingsPage_OnUnloaded"
       Foreground="{DynamicResource TextFillColorPrimaryBrush}">
-    <Page.DataContext>
-        <vm:SettingsPageViewModel x:Name="ViewModel"/>
-    </Page.DataContext>
-    <Grid>
-        <Label Content="Settings" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+    <Page.Resources>
+        <conv:EnumDisplayNameConverter x:Key="DisplayNameConverter" NameMethod="DisplayName"/>
+        <conv:EnumDisplayNameConverter x:Key="DescriptionConverter" NameMethod="Description"/>
+        <Style x:Key="PrefixLabelColumnStyle" TargetType="ColumnDefinition">
+            <Setter Property="Width" Value="200"/>
+        </Style>
+        <DataTemplate x:Key="ComboBoxDisplayTemplate" DataType="{x:Type sys:Enum}">
+            <TextBlock Text="{Binding Converter={StaticResource DisplayNameConverter}}"/>
+        </DataTemplate>
+        <DataTemplate x:Key="InfoBoxTemplate">
+            <Border Background="{DynamicResource InfoBoxBackgroundBrush}" CornerRadius="5" Padding="5" Margin="5,0,0,0">
+                <StackPanel Orientation="Horizontal">
+                    <ui:SymbolIcon Symbol="Info24" Margin="0,0,5,0"/>
+                    <TextBlock Text="{Binding ., Converter={StaticResource DescriptionConverter}}" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+        <Style x:Key="FieldAboutButtonStyle" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="ContentTemplate">
+                <Setter.Value>
+                    <DataTemplate>
+                        <ui:SymbolIcon Symbol="Question24"/>
+                    </DataTemplate>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="ToolTip" Value="View tool information"/>
+            <Setter Property="Margin" Value="5,0,0,5"/>
+            <Setter Property="VerticalAlignment" Value="Stretch"/>
+        </Style>
+        <Thickness x:Key="FieldMargin">0,0,0,5</Thickness>
+        <Thickness x:Key="FirstHeaderMargin">0,0,0,10</Thickness>
+        <Thickness x:Key="HeaderMargin">0,30,0,10</Thickness>
+        <Thickness x:Key="ButtonMargin">5,0,0,0</Thickness>
+    </Page.Resources>
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Orientation="Vertical">
+            <!-- BNK Settings -->
+            <TextBlock Text="BNK Settings" FontWeight="Bold" HorizontalAlignment="Center" Margin="{StaticResource FirstHeaderMargin}"/>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Style="{StaticResource PrefixLabelColumnStyle}"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="1*"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="1*"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Column="0" Grid.Row="0" Text="Conversion Method" VerticalAlignment="Center" Margin="{StaticResource FieldMargin}"/>
+                <ComboBox Grid.Column="1" Grid.Row="0" ItemsSource="{Binding BNKConversionMethods}" SelectedItem="{Binding BNKConversionMethod}" Margin="{StaticResource FieldMargin}" ItemTemplate="{StaticResource ComboBoxDisplayTemplate}"/>
+                <ContentControl Grid.Column="1" Grid.Row="1" Content="{Binding BNKConversionMethod}" ContentTemplate="{StaticResource InfoBoxTemplate}"/>
+
+                <TextBlock Grid.Column="0" Grid.Row="2" Text="bnkextr Path" VerticalAlignment="Center" Visibility="{Binding BNKExtrPathVisibility}" Margin="{StaticResource FieldMargin}"/>
+                <TextBox Grid.Column="1" Grid.Row="2" Text="{Binding BNKExtrPath}" Visibility="{Binding BNKExtrPathVisibility}" Margin="{StaticResource FieldMargin}"/> <!-- TODO: Browse button -->
+                <Button Grid.Column="2" Grid.Row="2" Command="{Binding AboutBNKExtrCommand}" Style="{StaticResource FieldAboutButtonStyle}" Visibility="{Binding BNKExtrPathVisibility}"/>
+
+                <TextBlock Grid.Column="0" Grid.Row="2" Text="vgmstream Path" VerticalAlignment="Center" Visibility="{Binding VGMStreamPathVisibility}" Margin="{StaticResource FieldMargin}"/>
+                <TextBox Grid.Column="1" Grid.Row="2" Text="{Binding VGMStreamPath}" Visibility="{Binding VGMStreamPathVisibility}" Margin="{StaticResource FieldMargin}"/> <!-- TODO: Browse button -->
+                <Button Grid.Column="2" Grid.Row="2" Command="{Binding AboutVGMStreamCommand}" Style="{StaticResource FieldAboutButtonStyle}" Visibility="{Binding VGMStreamPathVisibility}"/>
+            </Grid>
+
+            <!-- HKX Settings -->
+            <TextBlock Text="HKX Settings" FontWeight="Bold" HorizontalAlignment="Center" Margin="{StaticResource HeaderMargin}"/>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Style="{StaticResource PrefixLabelColumnStyle}"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="1*"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="1*"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Column="0" Grid.Row="0" Text="Conversion Method" VerticalAlignment="Center" Margin="{StaticResource FieldMargin}"/>
+                <ComboBox Grid.Column="1" Grid.Row="0" ItemsSource="{Binding HKXConversionMethods}" SelectedItem="{Binding HKXConversionMethod}" Margin="{StaticResource FieldMargin}" ItemTemplate="{StaticResource ComboBoxDisplayTemplate}"/>
+                <ContentControl Grid.Column="1" Grid.Row="1" Content="{Binding HKXConversionMethod}" ContentTemplate="{StaticResource InfoBoxTemplate}"/>
+
+                <TextBlock Grid.Column="0" Grid.Row="2" Text="hkxcmd Path" VerticalAlignment="Center" Visibility="{Binding HKXCMDPathVisibility}" Margin="{StaticResource FieldMargin}"/>
+                <TextBox Grid.Column="1" Grid.Row="2" Text="{Binding HKXCMDPath}" Visibility="{Binding HKXCMDPathVisibility}" Margin="{StaticResource FieldMargin}"/> <!-- TODO: Browse button -->
+                <Button Grid.Column="2" Grid.Row="2" Command="{Binding AboutHKXCMDCommand}" Style="{StaticResource FieldAboutButtonStyle}" Visibility="{Binding HKXCMDPathVisibility}"/>
+
+                <TextBlock Grid.Column="0" Grid.Row="2" Text="hkdump Path" VerticalAlignment="Center" Visibility="{Binding HKDumpPathVisibility}" Margin="{StaticResource FieldMargin}"/>
+                <TextBox Grid.Column="1" Grid.Row="2" Text="{Binding HKDumpPath}" Visibility="{Binding HKDumpPathVisibility}" Margin="{StaticResource FieldMargin}"/> <!-- TODO: Browse button -->
+                <Button Grid.Column="2" Grid.Row="2" Command="{Binding AboutHKDumpCommand}" Style="{StaticResource FieldAboutButtonStyle}" Visibility="{Binding HKDumpPathVisibility}"/>
+
+                <TextBlock Grid.Column="0" Grid.Row="2" Text="Havok2FBX Path" VerticalAlignment="Center" Visibility="{Binding Havok2FBXPathVisibility}" Margin="{StaticResource FieldMargin}"/>
+                <TextBox Grid.Column="1" Grid.Row="2" Text="{Binding Havok2FBXPath}" Visibility="{Binding Havok2FBXPathVisibility}" Margin="{StaticResource FieldMargin}"/> <!-- TODO: Browse button -->
+                <Button Grid.Column="2" Grid.Row="2" Command="{Binding AboutHavok2FBXCommand}" Style="{StaticResource FieldAboutButtonStyle}" Visibility="{Binding Havok2FBXPathVisibility}"/>
+            </Grid>
+        </StackPanel>
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Content="Save" Command="{Binding SaveCommand}"  Margin="{StaticResource ButtonMargin}"/>
+            <Button Content="Cancel" Command="{Binding DiscardCommand}" Margin="{StaticResource ButtonMargin}"/>
+            <Button Content="Reset" Command="{Binding ResetCommand}" Margin="{StaticResource ButtonMargin}"/>
+        </StackPanel>
     </Grid>
 </Page>

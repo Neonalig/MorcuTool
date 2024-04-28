@@ -19,9 +19,6 @@
         WindowCornerPreference="Round"
         WindowStartupLocation="CenterScreen"
         Title="MorcuTool">
-    <Window.DataContext>
-        <vm:MainWindowViewModel x:Name="ViewModel"/>
-    </Window.DataContext>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>

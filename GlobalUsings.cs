@@ -29,6 +29,7 @@ global using Wpf.Ui.Controls;
 global using Microsoft.Extensions.Configuration;
 global using Microsoft.Extensions.DependencyInjection;
 global using Microsoft.Extensions.Hosting;
+global using Microsoft.Extensions.Options;
 global using Microsoft.Win32;
 
 global using MessageBox = System.Windows.MessageBox;
@@ -37,3 +38,5 @@ global using MessageBoxButton = System.Windows.MessageBoxButton;
 global using MessageBoxImage = System.Windows.MessageBoxImage;
 global using Image = System.Drawing.Image;
 global using TreeViewItem = Wpf.Ui.Controls.TreeViewItem;
+global using ConfigurationManager = System.Configuration.ConfigurationManager;
+global using DisplayNameAttribute = MorcuTool.Converters.DisplayNameAttribute;

@@ -1,7 +1,4 @@
-﻿using System.ComponentModel;
-using Ardalis.SmartEnum;
-
-namespace MorcuTool.Models;
+﻿namespace MorcuTool.Models;
 
 [Flags]
 public enum SupportedPlatform

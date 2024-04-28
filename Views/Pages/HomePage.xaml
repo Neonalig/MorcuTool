@@ -12,9 +12,6 @@
       ui:Design.Background="{DynamicResource ApplicationBackgroundBrush}"
       ui:Design.Foreground="{DynamicResource TextFillColorPrimaryBrush}"
       Foreground="{DynamicResource TextFillColorPrimaryBrush}">
-    <Page.DataContext>
-        <vm:HomePageViewModel x:Name="ViewModel"/>
-    </Page.DataContext>
     <Grid>
         <Button Content="Open Package..." HorizontalAlignment="Center" VerticalAlignment="Center" Click="OpenPackageButton_Click"/>
     </Grid>

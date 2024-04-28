@@ -1,9 +1,14 @@
-﻿namespace MorcuTool.Views.Pages;
+﻿using MorcuTool.ViewModels.Pages;
+
+namespace MorcuTool.Views.Pages;
 
 public partial class HomePage
 {
-    public HomePage()
+    public HomePageViewModel ViewModel { get; }
+
+    public HomePage(HomePageViewModel viewModel)
     {
+        DataContext = ViewModel = viewModel;
         InitializeComponent();
     }
 
