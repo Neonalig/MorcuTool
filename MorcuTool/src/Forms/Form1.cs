@@ -968,5 +968,72 @@ namespace MorcuTool
             textEdit.Show();
 
         }
+
+        private void bulkConvertPackagesToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            var folderBrowserDialog1 = new FolderBrowserDialog();
+
+            if (folderBrowserDialog1.ShowDialog() == DialogResult.OK)
+            {
+                string[] packageFiles = Directory.GetFiles(folderBrowserDialog1.SelectedPath, "*.package");
+
+                foreach (string packageFile in packageFiles)
+                {
+                    // Load the package
+                    global.activePackage = new Package
+                    {
+                        filebytes = File.ReadAllBytes(packageFile),
+                        filename = packageFile,
+                        form1 = this,
+                    };
+
+                    global.activePackage.LoadPackage();
+
+                    // Create a new directory named after the package file
+                    string newDirectory = Path.Combine(Path.GetDirectoryName(packageFile), Path.GetFileNameWithoutExtension(packageFile));
+                    Directory.CreateDirectory(newDirectory);
+
+                    // Export all subfiles of the package to the new directory
+                    foreach (TreeNode node in FileTree.Nodes[0].Nodes)
+                    {
+                        bool was_loaded_already = false;
+                        Subfile target = treeNodesAndSubfiles[node];
+
+                        if (target.filebytes == null || target.filebytes.Length == 0)
+                        {
+                            target.Load();
+                        }
+                        else
+                        {
+                            was_loaded_already = true;
+                        }
+
+                        string newname = target.filename;
+
+                        if (target.rmdl != null)
+                        {
+                            newname = target.filename.Replace(".rmdl", ".obj");
+                        }
+
+                        if (target.wmdl != null)
+                        {
+                            newname = target.filename.Replace(".wmdl", ".obj");
+                        }
+
+                        target.ExportFile(true, Path.Combine(newDirectory, newname));
+
+                        if (!was_loaded_already)
+                        {
+                            target.Unload();
+                        }
+                    }
+
+                    // Unload the package
+                    global.activePackage = null;
+                }
+
+                MessageBox.Show("Bulk conversion complete.");
+            }
+        }
     }
 }
